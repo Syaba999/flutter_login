@@ -57,6 +57,7 @@ class LoginMessages with ChangeNotifier {
 
   /// Login button's label
   final String loginButton;
+  final String demoLoginButton;
 
   /// Signup button's label
   final String signupButton;
