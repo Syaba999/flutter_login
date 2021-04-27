@@ -230,6 +230,7 @@ class FlutterLogin extends StatefulWidget {
       this.messages,
       this.theme,
       this.emailValidator,
+      this.emailRecoveryValidator,
       this.passwordValidator,
       this.onSubmitAnimationCompleted,
       this.logoTag,
@@ -275,6 +276,7 @@ class FlutterLogin extends StatefulWidget {
   /// Email validating logic, Returns an error string to display if the input is
   /// invalid, or null otherwise
   final FormFieldValidator<String>? emailValidator;
+  final FormFieldValidator<String>? emailRecoveryValidator;
 
   /// Same as [emailValidator] but for password
   final FormFieldValidator<String>? passwordValidator;
@@ -579,6 +581,8 @@ class _FlutterLoginState extends State<FlutterLogin>
     final headerHeight = cardTopPosition - headerMargin;
     final emailValidator =
         widget.emailValidator ?? FlutterLogin.defaultEmailValidator;
+    final emailRecoveryValidator =
+        widget.emailRecoveryValidator ?? FlutterLogin.defaultEmailValidator;
     final passwordValidator =
         widget.passwordValidator ?? FlutterLogin.defaultPasswordValidator;
 
@@ -635,6 +639,7 @@ class _FlutterLoginState extends State<FlutterLogin>
                         padding: EdgeInsets.only(top: cardTopPosition),
                         loadingController: _loadingController,
                         emailValidator: emailValidator,
+                        emailRecoveryValidator: emailRecoveryValidator,
                         passwordValidator: passwordValidator,
                         onSubmit: _reverseHeaderAnimation,
                         onSubmitCompleted: widget.onSubmitAnimationCompleted,
