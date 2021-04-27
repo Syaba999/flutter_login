@@ -735,7 +735,7 @@ class _LoginCardState extends State<_LoginCard> with TickerProviderStateMixin {
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         textColor: theme.primaryColor,
         child: AnimatedText(
-          text: auth.isSignup ? messages.loginButton : messages.signupButton,
+          text: messages.demoLoginButton,
           textRotation: AnimatedTextRotation.down,
         ),
       ),
