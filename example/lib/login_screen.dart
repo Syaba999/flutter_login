@@ -1,6 +1,7 @@
-import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:flutter_login/flutter_login.dart';
+
 import 'constants.dart';
 import 'custom_route.dart';
 import 'dashboard_screen.dart';
@@ -168,6 +169,9 @@ class LoginScreen extends StatelessWidget {
         print('Name: $name');
         return _recoverPassword(name);
         // Show new password dialog
+      },
+      onDemoLogin: (loginData) {
+        print(loginData.toString());
       },
       showDebugButtons: true,
     );

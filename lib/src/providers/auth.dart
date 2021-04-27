@@ -18,16 +18,20 @@ class Auth with ChangeNotifier {
   Auth({
     this.loginProviders,
     this.onLogin,
+    this.onDemoLogin,
     this.onSignup,
     this.onRecoverPassword,
     String email = '',
+    String emailRecovery = '',
     String password = '',
     String confirmPassword = '',
   })  : _email = email,
+        _emailRecovery = emailRecovery,
         _password = password,
         _confirmPassword = confirmPassword;
 
   final AuthCallback? onLogin;
+  final AuthCallback? onDemoLogin;
   final AuthCallback? onSignup;
   final RecoverCallback? onRecoverPassword;
   final List<LoginProvider>? loginProviders;
@@ -61,6 +65,13 @@ class Auth with ChangeNotifier {
   String get email => _email;
   set email(String email) {
     _email = email;
+    notifyListeners();
+  }
+
+  String _emailRecovery = '';
+  String get emailRecovery => _emailRecovery;
+  set emailRecovery(String emailRecovery) {
+    _emailRecovery = emailRecovery;
     notifyListeners();
   }
 

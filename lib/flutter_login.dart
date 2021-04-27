@@ -223,6 +223,7 @@ class FlutterLogin extends StatefulWidget {
       {Key? key,
       required this.onSignup,
       required this.onLogin,
+      required this.onDemoLogin,
       required this.onRecoverPassword,
       this.title,
       this.logo,
@@ -246,6 +247,7 @@ class FlutterLogin extends StatefulWidget {
 
   /// Called when the user hit the submit button when in login mode
   final AuthCallback onLogin;
+  final AuthCallback onDemoLogin;
 
   /// list of LoginProvider each have an icon and a callback that will be Called when
   /// the user hit the provider icon button
@@ -602,6 +604,7 @@ class _FlutterLoginState extends State<FlutterLogin>
         ChangeNotifierProvider(
           create: (context) => Auth(
             onLogin: widget.onLogin,
+            onDemoLogin: widget.onDemoLogin,
             onSignup: widget.onSignup,
             onRecoverPassword: widget.onRecoverPassword,
             loginProviders: widget.loginProviders,

@@ -2,9 +2,18 @@ import 'dart:math';
 
 import 'package:another_transformer_page_view/another_transformer_page_view.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 
+import '../constants.dart';
+import '../dart_helper.dart';
+import '../matrix.dart';
+import '../models/login_data.dart';
+import '../paddings.dart';
+import '../providers/auth.dart';
+import '../providers/login_messages.dart';
+import '../providers/login_theme.dart';
+import '../widget_helper.dart';
 import 'animated_button.dart';
 import 'animated_icon.dart';
 import 'animated_text.dart';
@@ -12,15 +21,6 @@ import 'animated_text_form_field.dart';
 import 'custom_page_transformer.dart';
 import 'expandable_container.dart';
 import 'fade_in.dart';
-import '../constants.dart';
-import '../providers/auth.dart';
-import '../providers/login_messages.dart';
-import '../providers/login_theme.dart';
-import '../models/login_data.dart';
-import '../dart_helper.dart';
-import '../matrix.dart';
-import '../paddings.dart';
-import '../widget_helper.dart';
 
 class AuthCard extends StatefulWidget {
   AuthCard({
@@ -28,6 +28,7 @@ class AuthCard extends StatefulWidget {
     this.padding = const EdgeInsets.all(0),
     this.loadingController,
     this.emailValidator,
+    this.emailRecoveryValidator,
     this.passwordValidator,
     this.onSubmit,
     this.onSubmitCompleted,
@@ -39,6 +40,7 @@ class AuthCard extends StatefulWidget {
   final EdgeInsets padding;
   final AnimationController? loadingController;
   final FormFieldValidator<String>? emailValidator;
+  final FormFieldValidator<String>? emailRecoveryValidator;
   final FormFieldValidator<String>? passwordValidator;
   final Function? onSubmit;
   final Function? onSubmitCompleted;
@@ -309,7 +311,7 @@ class AuthCardState extends State<AuthCard> with TickerProviderStateMixin {
                   ),
                 )
               : _RecoverCard(
-                  emailValidator: widget.emailValidator,
+                  emailValidator: widget.emailRecoveryValidator,
                   onSwitchLogin: () => _switchRecovery(false),
                 );
 
@@ -541,6 +543,47 @@ class _LoginCardState extends State<_LoginCard> with TickerProviderStateMixin {
     return true;
   }
 
+  Future<bool> _demoAuth() async {
+    // a hack to force unfocus the soft keyboard. If not, after change-route
+    // animation completes, it will trigger rebuilding this widget and show all
+    // textfields and buttons again before going to new route
+    FocusScope.of(context).requestFocus(FocusNode());
+
+    final messages = Provider.of<LoginMessages>(context, listen: false);
+
+    _formKey.currentState!.save();
+    await _submitController.forward();
+    setState(() => _isSubmitting = true);
+    final auth = Provider.of<Auth>(context, listen: false);
+    String? error;
+
+    error = await auth.onDemoLogin!(LoginData(
+      name: '',
+      password: '',
+    ));
+
+    // workaround to run after _cardSizeAnimation in parent finished
+    // need a cleaner way but currently it works so..
+    Future.delayed(const Duration(milliseconds: 270), () {
+      setState(() => _showShadow = false);
+    });
+
+    await _submitController.reverse();
+
+    if (!DartHelper.isNullOrEmpty(error)) {
+      showErrorToast(context, messages.flushbarTitleError, error!);
+      Future.delayed(const Duration(milliseconds: 271), () {
+        setState(() => _showShadow = true);
+      });
+      setState(() => _isSubmitting = false);
+      return false;
+    }
+
+    widget.onSubmitCompleted!();
+
+    return true;
+  }
+
   Future<bool> _loginProviderSubmit(
       {required AnimationController control,
       required ProviderAuthCallback callback}) async {
@@ -677,6 +720,28 @@ class _LoginCardState extends State<_LoginCard> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildDemoAuthButton(ThemeData theme, LoginMessages messages,
+      Auth auth, LoginTheme loginTheme) {
+    return FadeIn(
+      controller: _loadingController,
+      offset: .5,
+      curve: _textButtonLoadingAnimationInterval,
+      fadeDirection: FadeDirection.topToBottom,
+      child: MaterialButton(
+        disabledTextColor: theme.primaryColor,
+        onPressed: _demoAuth,
+        padding: loginTheme.authButtonPadding ??
+            EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textColor: theme.primaryColor,
+        child: AnimatedText(
+          text: auth.isSignup ? messages.loginButton : messages.signupButton,
+          textRotation: AnimatedTextRotation.down,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSwitchAuthButton(ThemeData theme, LoginMessages messages,
       Auth auth, LoginTheme loginTheme) {
     return FadeIn(
@@ -791,6 +856,7 @@ class _LoginCardState extends State<_LoginCard> with TickerProviderStateMixin {
                     : SizedBox.fromSize(
                         size: Size.fromHeight(10),
                       ),
+                _buildDemoAuthButton(theme, messages, auth, loginTheme),
                 _buildProvidersLogInButton(theme, messages, auth, loginTheme),
               ],
             ),
@@ -837,7 +903,7 @@ class _RecoverCardState extends State<_RecoverCard>
     super.initState();
 
     final auth = Provider.of<Auth>(context, listen: false);
-    _nameController = TextEditingController(text: auth.email);
+    _nameController = TextEditingController(text: auth.emailRecovery);
 
     _submitController = AnimationController(
       vsync: this,
@@ -861,7 +927,7 @@ class _RecoverCardState extends State<_RecoverCard>
     _formRecoverKey.currentState!.save();
     await _submitController!.forward();
     setState(() => _isSubmitting = true);
-    final error = await auth.onRecoverPassword!(auth.email);
+    final error = await auth.onRecoverPassword!(auth.emailRecovery);
 
     if (error != null) {
       showErrorToast(context, messages.flushbarTitleError, error);
@@ -891,6 +957,23 @@ class _RecoverCardState extends State<_RecoverCard>
       onFieldSubmitted: (value) => _submit(),
       validator: widget.emailValidator,
       onSaved: (value) => auth.email = value!,
+    );
+  }
+
+  Widget _buildEmailRecoveryField(
+      double width, LoginMessages messages, Auth auth) {
+    return AnimatedTextFormField(
+      controller: _nameController,
+      width: width,
+      labelText: messages.emailRecoveryHint,
+      prefixIcon: Icon(FontAwesomeIcons.solidUserCircle),
+      keyboardType: TextInputType.emailAddress,
+      autocorrect: false,
+      autofillHints: [AutofillHints.email],
+      textInputAction: TextInputAction.done,
+      onFieldSubmitted: (value) => _submit(),
+      validator: widget.emailValidator,
+      onSaved: (value) => auth.emailRecovery = value!,
     );
   }
 
@@ -950,7 +1033,7 @@ class _RecoverCardState extends State<_RecoverCard>
                   style: theme.textTheme.bodyText2,
                 ),
                 SizedBox(height: 20),
-                _buildRecoverNameField(textFieldWidth, messages, auth),
+                _buildEmailRecoveryField(textFieldWidth, messages, auth),
                 SizedBox(height: 20),
                 Text(
                   messages.recoverPasswordDescription,
