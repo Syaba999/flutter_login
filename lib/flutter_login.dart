@@ -596,7 +596,7 @@ class _FlutterLoginState extends State<FlutterLogin>
         ),
       );
     }
-
+    print("GRADIENT ${loginTheme.pageColorLight ?? theme.primaryColor} ${loginTheme.pageColorDark ?? theme.primaryColorDark}");
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(
